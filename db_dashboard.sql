@@ -12,8 +12,12 @@ CREATE TABLE users (
 CREATE TABLE posts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    nomor_keputusan VARCHAR(255) NOT NULL,
+    tanggal_keputusan DATE,
+    kategori VARCHAR(255) DEFAULT 'Umum',
     description TEXT,
+    content_blocks JSONB DEFAULT '[]'::jsonb,
+    hyperlink VARCHAR(255),
     status VARCHAR(20) DEFAULT 'published',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,4 +28,4 @@ CREATE TABLE posts (
 );
 
 -- 3. Membuat Index untuk mengoptimalkan fitur Search
-CREATE INDEX idx_posts_title ON posts(title);
+CREATE INDEX idx_posts_nomor ON posts(nomor_keputusan);

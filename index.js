@@ -4,6 +4,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,8 +13,13 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Menyajikan file statis dari folder public
-app.use(express.static('public'));
+// Menyajikan file statis dari folder public dengan path absolut (Penting untuk Vercel)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Fallback untuk route root '/' agar selalu mengirim index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // 1. Setup Koneksi ke Database PostgreSQL
 const pool = new Pool({
@@ -391,7 +397,12 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Menjalankan Server
-app.listen(port, () => {
-    console.log(`🚀 Server berjalan di http://localhost:${port}`);
-});
+// Menjalankan Server (hanya saat dijalankan langsung, bukan sebagai module Vercel)
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`🚀 Server berjalan di http://localhost:${port}`);
+    });
+}
+
+// Export untuk Vercel Serverless Function
+module.exports = app;
