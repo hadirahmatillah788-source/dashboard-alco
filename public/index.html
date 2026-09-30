@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ALCO</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div id="login-container" class="auth-container">
+        <div class="glass-card">
+            <h2 style="text-align: center; color: var(--primary);"><i class="fa-solid fa-shield-halved"></i> Welcome Back</h2>
+            <p style="text-align: center; margin-bottom: 2rem;">Silakan login untuk masuk ke dashboard</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+            </form>
+            <p class="error-msg" id="login-error"></p>
+        </div>
+    </div>
+
+    <div id="dashboard-container" class="dashboard-container hidden">
+        <aside class="sidebar glass-card">
+            <div class="logo">
+                <h2><i class="fa-solid fa-chart-line"></i> Dash<span class="highlight">ALCO</span></h2>
+            </div>
+            <div class="user-info">
+                <div class="avatar" id="user-avatar">U</div>
+                <div>
+                    <h4 id="user-name">User Name</h4>
+                    <span class="badge" id="user-role">Role</span>
+                </div>
+            </div>
+            <nav>
+                <a href="#" class="active" id="nav-overview"><i class="fa-solid fa-house"></i> Overview</a>
+                <a href="#" id="nav-master" style="display: none;"><i class="fa-solid fa-database"></i> Master Data</a>
+                <a href="#" id="nav-users" style="display: none;"><i class="fa-solid fa-users"></i> User Management</a>
+            </nav>
+            <div class="bottom-action">
+                <button id="logout-btn" class="btn-secondary" style="width: 100%;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="search-bar" id="search-bar-container">
+                    <i class="fa-solid fa-search" style="color: #666; margin-left: 10px;"></i>
+                    <input type="text" id="search-input" placeholder="Cari nomor keputusan atau deskripsi..." style="border:none; outline:none; background:transparent; width:100%; padding-left:10px;">
+                    <select id="category-filter" style="margin-left: 10px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; outline: none;">
+                        <option value="">Semua Kategori</option>
+                    </select>
+                    <select id="year-filter" style="margin-left: 10px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; outline: none;">
+                        <option value="">Semua Tahun</option>
+                    </select>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- VIEW 1: OVERVIEW -->
+                <div id="view-overview">
+                    <div class="header-action" style="margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-book-open"></i> Daftar Keputusan</h3>
+                    </div>
+
+                    <div class="table-container glass-card">
+                        <table id="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nomor Keputusan</th>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi Singkat</th>
+                                    <th>Tahun</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Data dynamically injected here -->
+                            </tbody>
+                        </table>
+
+                        <div id="pagination-controls" class="pagination">
+                            <button id="prev-page" class="btn-secondary" disabled><i class="fa-solid fa-chevron-left"></i> Sebelumnya</button>
+                            <span id="page-info">Halaman 1 dari 1</span>
+                            <button id="next-page" class="btn-secondary" disabled>Selanjutnya <i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 1.5: DETAIL KEPUTUSAN -->
+                <div id="view-detail" class="hidden">
+                    <div class="header-action" style="margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-file-lines"></i> Detail Keputusan</h3>
+                        <button id="back-home-btn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali ke Home</button>
+                    </div>
+                    <div class="glass-card" style="padding: 2rem;">
+                        <span id="detail-kategori" class="badge" style="background: var(--primary); color: white; margin-bottom: 1rem; display: inline-block;">Kategori</span>
+                        <h2 id="detail-nomor" style="margin-bottom: 0.5rem; color: var(--primary-dark);">Nomor Keputusan</h2>
+                        <p id="detail-tanggal" style="color: var(--text-muted); margin-bottom: 1.5rem;"><i class="fa-regular fa-calendar"></i> Tanggal</p>
+                        
+                        <div id="detail-content-blocks" style="margin-bottom: 2rem; line-height: 1.6;">
+                            <!-- Paragraf dan Tabel akan dirender di sini -->
+                        </div>
+
+                        <div id="detail-hyperlink-container" style="display: none; text-align: center; margin-top: 2rem;">
+                            <a id="detail-hyperlink" href="#" target="_blank" class="btn-primary" style="text-decoration: none; display: inline-block; padding: 0.75rem 2rem;"><i class="fa-solid fa-link"></i> Buka Dokumen Eksternal</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: MASTER DATA -->
+                <div id="view-master" class="hidden">
+                    <div class="header-action" style="margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-database"></i> Master Data Keputusan</h3>
+                        <div>
+                            <button id="add-data-btn" class="btn-primary" style="margin-right: 10px;"><i class="fa-solid fa-plus"></i> Tambah Keputusan</button>
+                            <button id="del-all-data-btn" class="btn-secondary" style="border-color:#ef4444; color:#ef4444;"><i class="fa-solid fa-trash-can"></i> Hapus Semua</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container glass-card">
+                        <table id="master-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Keputusan</th>
+                                    <th>Kategori</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="master-table-body">
+                                <!-- Data dynamically injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: USER MANAGEMENT -->
+                <div id="view-users" class="hidden">
+                    <div class="header-action" style="margin-bottom: 20px;">
+                        <h3><i class="fa-solid fa-users"></i> Manajemen Viewer</h3>
+                        <button id="add-user-btn" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Tambah Viewer</button>
+                    </div>
+
+                    <div class="table-container glass-card">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Tanggal Daftar</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Data users dynamically injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form for Posts -->
+    <div id="add-modal" class="modal hidden">
+        <div class="modal-content glass-card" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h3 id="modal-post-title"><i class="fa-solid fa-pen-to-square"></i> Form Keputusan</h3>
+            <form id="add-form">
+                <input type="hidden" id="post-id">
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Nomor Keputusan</label>
+                        <input type="text" id="post-nomor" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Kategori</label>
+                        <input type="text" id="post-kategori" placeholder="Ketik kategori baru atau yang sudah ada" required list="category-list">
+                        <datalist id="category-list">
+                            <!-- Populated dynamically -->
+                        </datalist>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Tanggal Keputusan</label>
+                        <input type="date" id="post-tanggal" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Deskripsi Singkat (Tampil di Overview)</label>
+                    <textarea id="post-desc" rows="2"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Isi Keputusan (Bisa tambah paragraf atau tabel)</label>
+                    <div id="content-blocks-container">
+                        <!-- Blocks added here -->
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button type="button" class="btn-secondary" id="add-paragraph-btn"><i class="fa-solid fa-align-left"></i> Paragraf</button>
+                        <button type="button" class="btn-secondary" id="add-table-btn"><i class="fa-solid fa-table"></i> Tabel</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Hyperlink (Link Eksternal jika ada)</label>
+                    <input type="url" id="post-link" placeholder="https://contoh.com">
+                </div>
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn-secondary" id="close-modal-btn"><i class="fa-solid fa-xmark"></i> Batal</button>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form for Users -->
+    <div id="user-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3 id="user-modal-title">Tambah Viewer</h3>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="user-username" required>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="user-email" required>
+                </div>
+                <div class="input-group" id="user-password-group">
+                    <label>Password</label>
+                    <input type="password" id="user-password" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="close-user-modal-btn"><i class="fa-solid fa-xmark"></i> Batal</button>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form for Reset Password -->
+    <div id="reset-password-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3><i class="fa-solid fa-key"></i> Reset Password Viewer</h3>
+            <form id="reset-password-form">
+                <input type="hidden" id="reset-user-id">
+                <div class="input-group">
+                    <label>Password Baru</label>
+                    <input type="password" id="reset-new-password" required minlength="6">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="close-reset-modal-btn"><i class="fa-solid fa-xmark"></i> Batal</button>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
