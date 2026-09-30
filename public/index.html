@@ -49,6 +49,7 @@
                 <a href="#" id="nav-users" style="display: none;"><i class="fa-solid fa-users"></i> User Management</a>
             </nav>
             <div class="bottom-action">
+                <button id="change-pwd-btn" class="btn-secondary" style="width: 100%; margin-bottom: 10px;"><i class="fa-solid fa-key"></i> Ganti Password</button>
                 <button id="logout-btn" class="btn-secondary" style="width: 100%;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
             </div>
         </aside>
@@ -264,6 +265,27 @@
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" id="close-reset-modal-btn"><i class="fa-solid fa-xmark"></i> Batal</button>
                     <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form for Change Profile Password -->
+    <div id="profile-pwd-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3><i class="fa-solid fa-lock"></i> Ganti Password Akun</h3>
+            <form id="profile-pwd-form">
+                <div class="input-group">
+                    <label>Password Saat Ini</label>
+                    <input type="password" id="profile-current-pwd" required>
+                </div>
+                <div class="input-group">
+                    <label>Password Baru</label>
+                    <input type="password" id="profile-new-pwd" required minlength="6">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="close-profile-pwd-btn"><i class="fa-solid fa-xmark"></i> Batal</button>
+                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan</button>
                 </div>
             </form>
         </div>

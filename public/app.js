@@ -773,5 +773,50 @@ resetPasswordForm.addEventListener('submit', async (e) => {
     finally { btn.innerHTML = originalText; btn.disabled = false; }
 });
 
+// ==========================================
+// CHANGE PROFILE PASSWORD LOGIC
+// ==========================================
+const changePwdBtn = document.getElementById('change-pwd-btn');
+const profilePwdModal = document.getElementById('profile-pwd-modal');
+const closeProfilePwdBtn = document.getElementById('close-profile-pwd-btn');
+const profilePwdForm = document.getElementById('profile-pwd-form');
+
+changePwdBtn.addEventListener('click', () => {
+    profilePwdForm.reset();
+    profilePwdModal.classList.remove('hidden');
+});
+
+closeProfilePwdBtn.addEventListener('click', () => {
+    profilePwdModal.classList.add('hidden');
+});
+
+profilePwdForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentPassword = document.getElementById('profile-current-pwd').value;
+    const newPassword = document.getElementById('profile-new-pwd').value;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/profile/password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        if (res.ok) {
+            alert('Password berhasil diubah!');
+            profilePwdModal.classList.add('hidden');
+        } else {
+            const data = await res.json();
+            alert(data.error || 'Gagal mengubah password');
+        }
+    } catch (err) { alert('Gagal menghubungi server'); }
+    finally { btn.innerHTML = originalText; btn.disabled = false; }
+});
+
 // Start
 init();

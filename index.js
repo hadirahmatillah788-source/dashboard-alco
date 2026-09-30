@@ -377,6 +377,30 @@ app.put('/api/users/:id/reset-password', authenticateToken, async (req, res) => 
     }
 });
 
+// PUT: Ganti Password Profil Sendiri (Semua User termasuk Admin)
+app.put('/api/profile/password', authenticateToken, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user_id = req.user.id;
+
+        const userResult = await pool.query('SELECT password_hash FROM users WHERE id = $1', [user_id]);
+        if (userResult.rows.length === 0) return res.status(404).json({ error: 'User tidak ditemukan.' });
+
+        const isValidPassword = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
+        if (!isValidPassword) return res.status(401).json({ error: 'Password saat ini salah.' });
+
+        if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password baru minimal 6 karakter.' });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, user_id]);
+
+        res.json({ message: 'Password berhasil diubah!' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Gagal merubah password profil.' });
+    }
+});
+
 // DELETE: Hapus user
 app.delete('/api/users/:id', authenticateToken, async (req, res) => {
     try {
