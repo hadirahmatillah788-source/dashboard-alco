@@ -377,9 +377,11 @@ app.put('/api/users/:id/reset-password', authenticateToken, async (req, res) => 
     }
 });
 
-// PUT: Ganti Password Profil Sendiri (Semua User termasuk Admin)
+// PUT: Ganti Password Profil Sendiri (Khusus Admin)
 app.put('/api/profile/password', authenticateToken, async (req, res) => {
     try {
+        if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin yang dapat mengubah password.' });
+        
         const { currentPassword, newPassword } = req.body;
         const user_id = req.user.id;
 

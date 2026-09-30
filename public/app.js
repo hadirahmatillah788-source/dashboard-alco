@@ -121,11 +121,13 @@ function showDashboard() {
     userAvatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
     
     if (currentUser.role === 'admin') {
-        navUsers.style.display = 'block';
-        navMaster.style.display = 'block';
+        navUsers.style.display = 'flex';
+        navMaster.style.display = 'flex';
+        document.getElementById('change-pwd-btn').style.display = 'inline-block';
     } else {
         navUsers.style.display = 'none';
         navMaster.style.display = 'none';
+        document.getElementById('change-pwd-btn').style.display = 'none';
     }
     
     fetchCategories();
