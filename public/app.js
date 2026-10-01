@@ -194,15 +194,17 @@ function showDashboard() {
     
     if (currentUser.role === 'admin') {
         navAll.style.display = 'flex';
-        navActive.style.display = 'flex';
-        navInactive.style.display = 'flex';
         adminOnlyElements.forEach(el => el.style.display = '');
+        document.getElementById('change-pwd-btn').style.display = 'flex';
     } else {
         navAll.style.display = 'none';
-        navActive.style.display = 'none';
-        navInactive.style.display = 'none';
         adminOnlyElements.forEach(el => el.style.display = 'none');
+        document.getElementById('change-pwd-btn').style.display = 'none';
     }
+    
+    // Viewers can access Active and Inactive
+    navActive.style.display = 'flex';
+    navInactive.style.display = 'flex';
     
     fetchCategories();
     switchView('overview');
@@ -607,7 +609,7 @@ function openDetailView(post) {
     detailContentBlocks.innerHTML = '';
     if (post.description) {
         const descP = document.createElement('p');
-        descP.className = "text-gray-600 font-medium mb-8 text-lg";
+        descP.className = "text-gray-600 font-medium mb-8 text-lg text-justify break-words";
         descP.textContent = post.description;
         detailContentBlocks.appendChild(descP);
     }
@@ -617,13 +619,13 @@ function openDetailView(post) {
             if (block.type === 'paragraph') {
                 const p = document.createElement('p');
                 p.textContent = block.content;
-                p.className = "leading-relaxed mb-5 text-gray-700";
+                p.className = "leading-relaxed mb-5 text-gray-700 text-justify break-words";
                 detailContentBlocks.appendChild(p);
             } else if (block.type === 'table') {
                 const tableContainer = document.createElement('div');
-                tableContainer.className = "border border-gray-200 rounded-md overflow-x-auto my-8";
+                tableContainer.className = "overflow-x-auto my-8";
                 const table = document.createElement('table');
-                table.className = "min-w-full divide-y divide-gray-200 table-auto";
+                table.className = "min-w-full table-auto border-collapse border border-gray-300";
                 
                 const thead = document.createElement('thead');
                 const trHead = document.createElement('tr');
@@ -631,7 +633,7 @@ function openDetailView(post) {
                     block.content.headers.forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
-                        th.className = "px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50";
+                        th.className = "px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50 border border-gray-300";
                         trHead.appendChild(th);
                     });
                 }
@@ -639,14 +641,14 @@ function openDetailView(post) {
                 table.appendChild(thead);
                 
                 const tbody = document.createElement('tbody');
-                tbody.className = "bg-white divide-y divide-gray-200";
+                tbody.className = "bg-white";
                 if (block.content.rows) {
                     block.content.rows.forEach(row => {
                         const tr = document.createElement('tr');
                         row.forEach(cell => {
                             const td = document.createElement('td');
                             td.textContent = cell;
-                            td.className = "px-5 py-4 text-sm text-gray-900";
+                            td.className = "px-5 py-4 text-sm text-gray-900 border border-gray-300";
                             tr.appendChild(td);
                         });
                         tbody.appendChild(tr);
