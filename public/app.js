@@ -59,6 +59,12 @@ const addCatModal = document.getElementById('add-cat-modal');
 const addCatForm = document.getElementById('add-cat-form');
 const closeCatModalBtn = document.getElementById('close-cat-modal-btn');
 const catNameInput = document.getElementById('cat-name-input');
+const catPrevPageBtn = document.getElementById('cat-prev-page');
+const catNextPageBtn = document.getElementById('cat-next-page');
+const catPageInfo = document.getElementById('cat-page-info');
+
+let catCurrentPage = 1;
+const CAT_LIMIT = 15;
 
 // Post Form Modal Elements
 const addModal = document.getElementById('add-modal');
@@ -272,6 +278,7 @@ function switchView(view) {
         navCategories.classList.add('active');
         viewCategories.classList.remove('hidden');
         searchBarContainer.style.display = 'none';
+        catCurrentPage = 1;
         renderCategoriesView();
     } else if (view === 'users') {
         navUsers.classList.add('active');
@@ -343,11 +350,11 @@ async function fetchCategories() {
         
         categoriesCache.forEach(cat => {
             const opt1 = document.createElement('option');
-            opt1.value = cat; opt1.textContent = cat;
+            opt1.value = cat.kategori; opt1.textContent = cat.kategori;
             categoryFilter.appendChild(opt1);
             
             const opt2 = document.createElement('option');
-            opt2.value = cat; opt2.textContent = cat;
+            opt2.value = cat.kategori; opt2.textContent = cat.kategori;
             postKategoriSelect.appendChild(opt2);
         });
         
@@ -360,15 +367,23 @@ async function fetchCategories() {
 function renderCategoriesView() {
     categoriesTableBody.innerHTML = '';
     if (categoriesCache.length === 0) {
-        categoriesTableBody.innerHTML = `<tr><td colspan="2" class="text-center py-8 text-gray-500">Tidak ada kategori</td></tr>`;
+        categoriesTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">Tidak ada kategori</td></tr>`;
+        catPageInfo.textContent = `Halaman 1 dari 1`;
         return;
     }
-    categoriesCache.forEach(cat => {
+    
+    const totalPages = Math.ceil(categoriesCache.length / CAT_LIMIT);
+    const offset = (catCurrentPage - 1) * CAT_LIMIT;
+    const pagedCats = categoriesCache.slice(offset, offset + CAT_LIMIT);
+    
+    pagedCats.forEach(cat => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="font-medium text-gray-900"><i class="fa-solid fa-tag text-gray-400 mr-2 text-xs"></i> ${cat}</td>
+            <td class="font-medium text-gray-900"><i class="fa-solid fa-tag text-gray-400 mr-2 text-xs"></i> ${cat.kategori}</td>
+            <td class="text-center"><span class="badge bg-green-50 text-green-700 border-green-200">${cat.active_count}</span></td>
+            <td class="text-center"><span class="badge bg-gray-100 text-gray-600 border-gray-200">${cat.inactive_count}</span></td>
             <td class="text-right">
-                <button class="btn-secondary filter-cat-btn !text-xs !py-1.5" data-cat="${cat}"><i class="fa-solid fa-filter"></i> Lihat Keputusan</button>
+                <button class="btn-secondary filter-cat-btn !text-xs !py-1.5" data-cat="${cat.kategori}"><i class="fa-solid fa-filter"></i> Lihat Keputusan</button>
             </td>
         `;
         tr.querySelector('.filter-cat-btn').addEventListener('click', (e) => {
@@ -378,7 +393,19 @@ function renderCategoriesView() {
         });
         categoriesTableBody.appendChild(tr);
     });
+    
+    catPageInfo.textContent = `Halaman ${catCurrentPage} dari ${totalPages || 1}`;
+    catPrevPageBtn.disabled = catCurrentPage <= 1;
+    catNextPageBtn.disabled = catCurrentPage >= totalPages;
+    catPrevPageBtn.style.opacity = catPrevPageBtn.disabled ? '0.5' : '1';
+    catNextPageBtn.style.opacity = catNextPageBtn.disabled ? '0.5' : '1';
 }
+
+catPrevPageBtn.addEventListener('click', () => { if (catCurrentPage > 1) { catCurrentPage--; renderCategoriesView(); } });
+catNextPageBtn.addEventListener('click', () => { 
+    const totalPages = Math.ceil(categoriesCache.length / CAT_LIMIT);
+    if (catCurrentPage < totalPages) { catCurrentPage++; renderCategoriesView(); } 
+});
 
 addCatBtn.addEventListener('click', () => {
     addCatForm.reset();

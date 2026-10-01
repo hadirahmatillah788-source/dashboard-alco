@@ -207,8 +207,18 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/categories', authenticateToken, async (req, res) => {
     try {
-        const categories = await pool.query('SELECT name as kategori FROM categories ORDER BY name ASC');
-        res.json({ data: categories.rows.map(row => row.kategori) });
+        const query = `
+            SELECT 
+                c.name as kategori,
+                COUNT(CASE WHEN p.status = 'published' THEN 1 END) as active_count,
+                COUNT(CASE WHEN p.status != 'published' THEN 1 END) as inactive_count
+            FROM categories c
+            LEFT JOIN posts p ON c.name = p.kategori
+            GROUP BY c.name
+            ORDER BY c.name ASC
+        `;
+        const categories = await pool.query(query);
+        res.json({ data: categories.rows });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Gagal mengambil kategori' });
