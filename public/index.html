@@ -1,323 +1,579 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard ALCO</title>
-    <!-- Logo Favicon -->
+    <title>ALCO Decision Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: {
+                            600: '#1e3a8a',
+                            700: '#1e3a8a',
+                            800: '#1e40af',
+                            900: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Standard CSS for JS injected elements -->
+    <style>
+        :root {
+            --navy-800: #1e40af;
+            --navy-900: #172554;
+        }
+        
+        .btn-primary {
+            background-color: var(--navy-900);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background-color: var(--navy-800); }
+        
+        .btn-secondary {
+            background-color: white; border: 1px solid #e5e7eb; color: #374151; padding: 0.5rem 1rem; border-radius: 0.375rem;
+            font-size: 0.75rem; font-weight: 500; transition: background-color 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
+        }
+        .btn-secondary:hover { background-color: #f9fafb; }
+        
+        .badge {
+            display: inline-flex; align-items: center; padding: 0.125rem 0.625rem; border-radius: 9999px; font-size: 11px; font-weight: 500; border: 1px solid transparent;
+        }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+        thead { background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+        th { padding: 0.75rem 1rem; font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Set specific widths for columns to prevent scrolling */
+        th:nth-child(1) { width: 15%; }
+        th:nth-child(2) { width: 30%; }
+        th:nth-child(3) { width: 12%; }
+        th:nth-child(4) { width: 10%; }
+        th:nth-child(5) { width: 10%; }
+        th:nth-child(6) { width: 23%; }
+        
+        tbody { background-color: white; }
+        tbody tr { border-bottom: 1px solid #e5e7eb; }
+        
+        /* Allow wrapping for descriptions */
+        td { padding: 1rem 1rem; font-size: 0.875rem; color: #111827; }
+        td:nth-child(2) { white-space: normal; word-break: break-word; }
+        td:not(:nth-child(2)) { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        
+        tr:hover { background-color: #f9fafb; transition: background-color 0.2s; }
+        
+        /* Collapsible Sidebar Styles */
+        .sidebar-placeholder {
+            width: 4.5rem; flex-shrink: 0;
+        }
+        #sidebar {
+            width: 4.5rem; position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+            background: white;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+            border-right: 1px solid #e5e7eb;
+        }
+        #sidebar:hover { width: 16rem; box-shadow: 4px 0 24px rgba(0,0,0,0.1); }
+        
+        .sidebar-text { opacity: 0; transition: opacity 0.2s; display: inline-block; white-space: nowrap; }
+        #sidebar:hover .sidebar-text { opacity: 1; transition-delay: 0.1s; }
+        
+        /* Navigation */
+        nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; color: #6b7280; transition: background-color 0.2s; text-decoration: none; margin-bottom: 0.25rem; white-space: nowrap; }
+        nav a:hover { background-color: #f3f4f6; color: #111827; }
+        nav a.active { background-color: var(--navy-900); color: white; font-weight: 500; }
+        nav a.active:hover { background-color: var(--navy-800); color: white; }
+        nav a.active i { color: white !important; }
+        nav a i { min-width: 1.25rem; text-align: center; } /* keep icons aligned */
+        
+        /* Inputs */
+        .input-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.375rem; }
+        .input-group label { font-size: 0.75rem; font-weight: 600; color: #374151; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; outline: none; background-color: #f9fafb; }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: transparent; box-shadow: 0 0 0 2px var(--navy-900); background-color: white; }
+        
+        /* Modals */
+        .modal { position: fixed; inset: 0; z-index: 100; overflow-y: auto; background-color: rgba(17, 24, 39, 0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.hidden { display: none !important; }
+        .modal-content { background-color: white; border-radius: 0.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 32rem; padding: 1.5rem; margin: auto; }
+        
+        .hidden { display: none !important; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden">
 
-<body>
-    <div id="login-container" class="auth-container">
-        <div class="glass-card">
-            <h2 style="text-align: center; color: var(--primary);"><i class="fa-solid fa-shield-halved"></i> Welcome
-                Back</h2>
-            <p style="text-align: center; margin-bottom: 2rem;">Silakan login untuk masuk ke dashboard</p>
-            <form id="login-form">
+    <!-- LOGIN -->
+    <div id="login-container" class="h-screen w-full flex items-center justify-center bg-gray-50 hidden relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1/3 bg-navy-900 skew-y-3 transform origin-top-left -translate-y-12 shadow-lg"></div>
+        <div class="bg-white p-10 rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md z-10 relative">
+            <div class="flex flex-col items-center justify-center gap-3 text-navy-900 mb-8">
+                <div class="bg-navy-900 p-3 rounded-lg shadow-md"><i class="fa-solid fa-scale-balanced text-white text-2xl"></i></div>
+                <h2 class="text-3xl font-bold tracking-tight">ALCO HUB</h2>
+                <p class="text-sm text-gray-500 font-medium">Sistem Informasi Keputusan Asset Liability Committee</p>
+            </div>
+            <form id="login-form" class="space-y-6">
                 <div class="input-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required>
+                    <label class="text-gray-700">Email Address</label>
+                    <input type="email" id="email" required placeholder="admin@dashboard.com" class="py-3 px-4">
                 </div>
                 <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required>
+                    <label class="text-gray-700">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="py-3 px-4">
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%;"><i
-                        class="fa-solid fa-right-to-bracket"></i> Login</button>
+                <button type="submit" class="btn-primary w-full justify-center text-sm py-3 mt-4 rounded-lg shadow-md">
+                    Login ke Dashboard <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
             </form>
-            <p class="error-msg" id="login-error"></p>
+            <p class="text-red-500 text-sm text-center mt-6 font-medium bg-red-50 rounded p-2 hidden" id="login-error"></p>
         </div>
     </div>
 
-    <div id="dashboard-container" class="dashboard-container hidden">
-        <aside class="sidebar glass-card">
-            <div class="logo">
-                <h2 style="flex-direction: column; align-items: flex-start; gap: 0.2rem; line-height: 1.2;">
-                    <div><i class="fa-solid fa-chart-line"></i> Dashboard</div>
-                    <span class="highlight" style="font-size: 1.4rem; color: var(--primary);">ALCO</span>
-                </h2>
-            </div>
-            <div class="user-info">
-                <div class="avatar" id="user-avatar">U</div>
-                <div>
-                    <h4 id="user-name">User Name</h4>
-                    <span class="badge" id="user-role">Role</span>
+    <!-- DASHBOARD -->
+    <div id="dashboard-container" class="flex h-screen w-full hidden">
+        
+        <!-- Sidebar Placeholder & Absolute Sidebar -->
+        <div class="sidebar-placeholder"></div>
+        <aside id="sidebar" class="flex flex-col">
+            <div class="h-16 flex items-center px-4 border-b border-gray-100 flex-shrink-0 w-[16rem]">
+                <div class="flex items-center gap-3 text-navy-900 pl-1">
+                    <div class="bg-navy-900 p-1.5 rounded shadow-sm flex-shrink-0">
+                        <i class="fa-solid fa-scale-balanced text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight sidebar-text">ALCO HUB</span>
                 </div>
             </div>
-            <nav>
-                <a href="#" class="active" id="nav-overview"><i class="fa-solid fa-house"></i> Overview</a>
-                <a href="#" id="nav-master" style="display: none;"><i class="fa-solid fa-database"></i> Master Data</a>
-                <a href="#" id="nav-users" style="display: none;"><i class="fa-solid fa-users"></i> User Management</a>
-            </nav>
-            <div class="bottom-action">
-                <button id="change-pwd-btn" class="btn-secondary" style="width: 100%; margin-bottom: 10px;"><i
-                        class="fa-solid fa-key"></i> Ganti Password</button>
-                <button id="logout-btn" class="btn-secondary" style="width: 100%;"><i
-                        class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            
+            <div class="flex-1 overflow-y-auto py-5 px-3 flex flex-col gap-1 overflow-x-hidden">
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3 sidebar-text">Menu Utama</div>
+                <nav class="flex flex-col">
+                    <a href="#" id="nav-overview" class="active"><i class="fa-solid fa-chart-pie text-gray-400"></i> <span class="sidebar-text">Dashboard</span></a>
+                    <a href="#" id="nav-all" style="display:none;"><i class="fa-solid fa-layer-group text-gray-400"></i> <span class="sidebar-text">Semua Keputusan</span></a>
+                    <a href="#" id="nav-active" style="display:none;"><i class="fa-solid fa-circle-check text-gray-400"></i> <span class="sidebar-text">Keputusan Aktif</span></a>
+                    <a href="#" id="nav-inactive" style="display:none;"><i class="fa-solid fa-clock-rotate-left text-gray-400"></i> <span class="sidebar-text">Keputusan Tidak Berlaku</span></a>
+                </nav>
+                
+                <div class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-6 admin-only sidebar-text" style="display:none;">Pengaturan</div>
+                <nav class="flex flex-col admin-only" style="display:none;">
+                    <a href="#" id="nav-categories"><i class="fa-solid fa-tags text-gray-400"></i> <span class="sidebar-text">Kategori</span></a>
+                    <a href="#" id="nav-users"><i class="fa-solid fa-users text-gray-400"></i> <span class="sidebar-text">Manajemen User</span></a>
+                </nav>
             </div>
         </aside>
 
-        <main class="main-content">
-            <header class="topbar">
-                <div class="search-bar" id="search-bar-container">
-                    <i class="fa-solid fa-search" style="color: #666; margin-left: 10px;"></i>
-                    <input type="text" id="search-input" placeholder="Cari nomor keputusan atau deskripsi..."
-                        style="border:none; outline:none; background:transparent; width:100%; padding-left:10px;">
-                    <select id="category-filter"
-                        style="margin-left: 10px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; outline: none;">
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50">
+            <!-- Topbar -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0 z-10">
+                <div class="flex items-center gap-4 w-full max-w-3xl" id="search-bar-container">
+                    <div class="relative w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" id="search-input" placeholder="Search decisions, topics, etc." 
+                            class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy-900 transition-all">
+                    </div>
+                    <select id="category-filter" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy-900">
                         <option value="">Semua Kategori</option>
                     </select>
-                    <select id="year-filter"
-                        style="margin-left: 10px; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; outline: none;">
+                    <select id="year-filter" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy-900">
                         <option value="">Semua Tahun</option>
                     </select>
                 </div>
+                
+                <div class="flex items-center gap-5 ml-auto">
+                    <!-- Notification Bell Dropdown -->
+                    <div class="relative cursor-pointer" id="notif-dropdown-wrapper">
+                        <button id="notif-bell-btn" class="text-gray-400 hover:text-navy-900 transition-colors relative pt-1">
+                            <i class="fa-regular fa-bell text-lg"></i>
+                            <span id="notif-badge" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white hidden"></span>
+                        </button>
+                        
+                        <div id="notif-dropdown-menu" class="absolute right-0 top-full mt-2 w-72 bg-white rounded-md shadow-lg border border-gray-200 hidden overflow-hidden z-[60]">
+                            <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 font-semibold text-xs text-gray-600">Notifikasi Terbaru</div>
+                            <div id="notif-list" class="max-h-64 overflow-y-auto">
+                                <div class="p-4 text-center text-xs text-gray-500">Tidak ada notifikasi</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-8 w-px bg-gray-200"></div>
+                    
+                    <!-- Profile Menu Dropdown -->
+                    <div class="relative cursor-pointer" id="profile-dropdown-wrapper">
+                        <div id="profile-btn" class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-navy-900 text-white flex items-center justify-center text-sm font-semibold shadow-sm" id="user-avatar">A</div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-gray-900 leading-none" id="user-name">Admin ALCO</span>
+                                <span class="text-[11px] text-gray-500 capitalize" id="user-role">Administrator</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-xs text-gray-400 ml-1 transition-transform"></i>
+                        </div>
+                        
+                        <div id="profile-dropdown-menu" class="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden overflow-hidden py-1 z-[60]">
+                            <button id="change-pwd-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i class="fa-solid fa-key w-4"></i> Ganti Password</button>
+                            <button id="logout-btn" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-100"><i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Logout</button>
+                        </div>
+                    </div>
+                </div>
             </header>
 
-            <div class="content-wrapper">
-                <!-- VIEW 1: OVERVIEW -->
-                <div id="view-overview">
-                    <div class="header-action" style="margin-bottom: 20px;">
-                        <h3><i class="fa-solid fa-book-open"></i> Daftar Keputusan</h3>
-                    </div>
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-8 relative">
+                
+                <!-- VIEW: OVERVIEW -->
+                <div id="view-overview" class="hidden">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Ringkasan Keputusan ALCO</h1>
+                                <p class="text-sm text-gray-500 mt-1">Overview data keputusan Asset Liability Committee</p>
+                            </div>
+                            <button class="btn-primary add-data-btn shadow-md admin-only" style="display:none;">
+                                <i class="fa-solid fa-plus"></i> Tambah Keputusan Baru
+                            </button>
+                        </div>
 
-                    <div class="table-container glass-card">
-                        <table id="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nomor Keputusan</th>
-                                    <th>Kategori</th>
-                                    <th>Deskripsi Singkat</th>
-                                    <th>Tahun</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body">
-                                <!-- Data dynamically injected here -->
-                            </tbody>
-                        </table>
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-5 mb-8">
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                <span class="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Total Keputusan</span>
+                                <span class="text-2xl font-semibold text-gray-900" id="stat-total">-</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                <span class="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Keputusan Aktif</span>
+                                <span class="text-2xl font-semibold text-green-600" id="stat-active">-</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                <span class="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Tidak Aktif / Arsip</span>
+                                <span class="text-2xl font-semibold text-orange-600" id="stat-inactive">-</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                <span class="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Diperbarui Bulan Ini</span>
+                                <span class="text-2xl font-semibold text-blue-600" id="stat-month">-</span>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                <span class="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Total Kategori</span>
+                                <span class="text-2xl font-semibold text-purple-600" id="stat-categories">-</span>
+                            </div>
+                        </div>
 
-                        <div id="pagination-controls" class="pagination">
-                            <button id="prev-page" class="btn-secondary" disabled><i
-                                    class="fa-solid fa-chevron-left"></i> Sebelumnya</button>
-                            <span id="page-info">Halaman 1 dari 1</span>
-                            <button id="next-page" class="btn-secondary" disabled>Selanjutnya <i
-                                    class="fa-solid fa-chevron-right"></i></button>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                                <h2 class="text-base font-semibold text-gray-900">Keputusan Terbaru</h2>
+                                <button class="text-sm text-navy-900 font-medium hover:underline" id="view-all-btn">Lihat Semua</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table id="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>No. Keputusan</th>
+                                            <th>Judul / Topik</th>
+                                            <th>Tanggal Rapat</th>
+                                            <th>Status</th>
+                                            <th class="text-center">File Asli</th>
+                                            <th class="text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- VIEW 1.5: DETAIL KEPUTUSAN -->
-                <div id="view-detail" class="hidden">
-                    <div class="header-action" style="margin-bottom: 20px;">
-                        <h3><i class="fa-solid fa-file-lines"></i> Detail Keputusan</h3>
-                        <button id="back-home-btn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali
-                            ke Home</button>
-                    </div>
-                    <div class="glass-card" style="padding: 2rem;">
-                        <span id="detail-kategori" class="badge"
-                            style="background: var(--primary); color: white; margin-bottom: 1rem; display: inline-block;">Kategori</span>
-                        <h2 id="detail-nomor" style="margin-bottom: 0.5rem; color: var(--primary-dark);">Nomor Keputusan
-                        </h2>
-                        <p id="detail-tanggal" style="color: var(--text-muted); margin-bottom: 1.5rem;"><i
-                                class="fa-regular fa-calendar"></i> Tanggal</p>
-
-                        <div id="detail-content-blocks" style="margin-bottom: 2rem; line-height: 1.6;">
-                            <!-- Paragraf dan Tabel akan dirender di sini -->
-                        </div>
-
-                        <div id="detail-hyperlink-container"
-                            style="display: none; text-align: center; margin-top: 2rem;">
-                            <a id="detail-hyperlink" href="#" target="_blank" class="btn-primary"
-                                style="text-decoration: none; display: inline-block; padding: 0.75rem 2rem;"><i
-                                    class="fa-solid fa-link"></i> Buka Dokumen Eksternal</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- VIEW 3: MASTER DATA -->
+                <!-- VIEW: MASTER DATA -->
                 <div id="view-master" class="hidden">
-                    <div class="header-action" style="margin-bottom: 20px;">
-                        <h3><i class="fa-solid fa-database"></i> Master Data Keputusan</h3>
-                        <div>
-                            <button id="add-data-btn" class="btn-primary" style="margin-right: 10px;"><i
-                                    class="fa-solid fa-plus"></i> Tambah Keputusan</button>
-                            <button id="del-all-data-btn" class="btn-secondary"
-                                style="border-color:#ef4444; color:#ef4444;"><i class="fa-solid fa-trash-can"></i> Hapus
-                                Semua</button>
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-900 tracking-tight" id="master-title">Semua Keputusan</h1>
+                                <p class="text-sm text-gray-500 mt-1" id="master-subtitle">Kelola seluruh data keputusan</p>
+                            </div>
+                            <div class="flex gap-3 admin-only" style="display:none;">
+                                <button class="btn-primary add-data-btn shadow-md"><i class="fa-solid fa-plus"></i> Tambah Keputusan</button>
+                                <button id="del-all-data-btn" class="btn-secondary !text-red-600 !border-red-200 hover:!bg-red-50"><i class="fa-solid fa-trash-can"></i> Hapus Semua</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                            <div class="overflow-x-auto w-full">
+                                <table id="master-table">
+                                    <thead>
+                                        <tr>
+                                            <th>No. Keputusan</th>
+                                            <th>Judul / Topik</th>
+                                            <th>Tanggal Rapat</th>
+                                            <th>Status</th>
+                                            <th class="text-center">File Asli</th>
+                                            <th class="text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="master-table-body"></tbody>
+                                </table>
+                            </div>
+                            <div id="pagination-controls" class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+                                <button id="prev-page" class="btn-secondary text-xs"><i class="fa-solid fa-chevron-left"></i> Sebelumnya</button>
+                                <span id="page-info" class="text-xs font-medium text-gray-600">Halaman 1 dari 1</span>
+                                <button id="next-page" class="btn-secondary text-xs">Selanjutnya <i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- VIEW: CATEGORIES -->
+                <div id="view-categories" class="hidden">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Kategori Keputusan</h1>
+                                <p class="text-sm text-gray-500 mt-1">Daftar kategori yang ada di dalam database</p>
+                            </div>
+                            <button id="add-cat-btn" class="btn-primary shadow-md admin-only" style="display:none;"><i class="fa-solid fa-plus"></i> Tambah Kategori</button>
+                        </div>
 
-                    <div class="table-container glass-card">
-                        <table id="master-table">
-                            <thead>
-                                <tr>
-                                    <th>No. Keputusan</th>
-                                    <th>Kategori</th>
-                                    <th>Status</th>
-                                    <th>Tanggal</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="master-table-body">
-                                <!-- Data dynamically injected here -->
-                            </tbody>
-                        </table>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col max-w-2xl">
+                            <div class="overflow-x-auto">
+                                <table id="categories-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Kategori</th>
+                                            <th class="text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categories-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- VIEW 2: USER MANAGEMENT -->
+                <!-- VIEW: USERS -->
                 <div id="view-users" class="hidden">
-                    <div class="header-action" style="margin-bottom: 20px;">
-                        <h3><i class="fa-solid fa-users"></i> Manajemen Viewer</h3>
-                        <button id="add-user-btn" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Tambah
-                            Viewer</button>
-                    </div>
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Manajemen User</h1>
+                                <p class="text-sm text-gray-500 mt-1">Kelola akun viewer sistem</p>
+                            </div>
+                            <button id="add-user-btn" class="btn-primary shadow-md"><i class="fa-solid fa-user-plus"></i> Tambah Viewer</button>
+                        </div>
 
-                    <div class="table-container glass-card">
-                        <table id="users-table">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Tanggal Daftar</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                <!-- Data users dynamically injected here -->
-                            </tbody>
-                        </table>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                            <div class="overflow-x-auto">
+                                <table id="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:25%">Username</th>
+                                            <th style="width:35%">Email</th>
+                                            <th style="width:20%">Tanggal Daftar</th>
+                                            <th class="text-right" style="width:20%">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- VIEW: FULL PAGE DETAIL -->
+                <div id="view-detail" class="hidden bg-white min-h-[calc(100vh-8rem)] rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-8 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                        <button id="back-home-btn" class="btn-secondary !text-gray-600 hover:!bg-gray-100 !px-3 !py-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-left"></i> Kembali ke List
+                        </button>
+                        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Detail Keputusan</h2>
+                    </div>
+                    <div class="p-8 lg:p-12 max-w-5xl mx-auto">
+                        <div class="mb-8">
+                            <span id="detail-kategori" class="inline-block px-2 py-1 bg-navy-900 text-white text-[10px] font-semibold uppercase tracking-widest rounded mb-4">Kategori</span>
+                            <h3 id="detail-nomor" class="text-3xl font-bold text-gray-900 leading-snug mb-3">Nomor Keputusan</h3>
+                            <div class="flex items-center gap-5 text-sm text-gray-500 border-b border-gray-100 pb-6">
+                                <span id="detail-tanggal" class="flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i> Tanggal</span>
+                                <span id="detail-status" class="flex items-center gap-1.5"></span>
+                            </div>
+                        </div>
+                        
+                        <div id="detail-content-blocks" class="prose prose-base text-gray-700 max-w-none mb-10">
+                            <!-- blocks rendered here -->
+                        </div>
+                        
+                        <div id="detail-hyperlink-container" class="mt-8 border-t border-gray-200 pt-6">
+                            <p class="text-sm text-gray-500 mb-3">Dokumen referensi resmi (Eksternal):</p>
+                            <a id="detail-hyperlink" href="#" target="_blank" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-navy-900 font-medium py-2.5 px-5 rounded-md transition-colors text-sm border border-gray-300">
+                                <i class="fa-brands fa-google-drive"></i> Buka File Asli <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </main>
     </div>
 
-    <!-- Modal Form for Posts -->
+    <!-- MODAL: ADD POST -->
     <div id="add-modal" class="modal hidden">
-        <div class="modal-content glass-card" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
-            <h3 id="modal-post-title"><i class="fa-solid fa-pen-to-square"></i> Form Keputusan</h3>
-            <form id="add-form">
+        <div class="modal-content !max-w-4xl !p-0 h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-8 py-5 border-b border-gray-100 bg-white">
+                <h3 id="modal-post-title" class="text-lg font-bold text-gray-900">Form Keputusan</h3>
+            </div>
+            <form id="add-form" class="flex-1 overflow-y-auto px-8 py-6 bg-gray-50">
                 <input type="hidden" id="post-id">
-                <div style="display: flex; gap: 15px;">
-                    <div class="input-group" style="flex: 1;">
-                        <label>Nomor Keputusan</label>
-                        <input type="text" id="post-nomor" required>
-                    </div>
-                    <div class="input-group" style="flex: 1;">
-                        <label>Kategori</label>
-                        <input type="text" id="post-kategori" placeholder="Ketik kategori baru atau yang sudah ada"
-                            required list="category-list">
-                        <datalist id="category-list">
-                            <!-- Populated dynamically -->
-                        </datalist>
-                    </div>
-                    <div class="input-group" style="flex: 1;">
-                        <label>Tanggal Keputusan</label>
-                        <input type="date" id="post-tanggal" required>
+                
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Informasi Dasar</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="input-group !mb-0">
+                            <label>Nomor Keputusan</label>
+                            <input type="text" id="post-nomor" required>
+                        </div>
+                        <div class="input-group !mb-0">
+                            <label>Kategori</label>
+                            <select id="post-kategori" required>
+                                <option value="">Pilih Kategori...</option>
+                            </select>
+                        </div>
+                        <div class="input-group !mb-0">
+                            <label>Tanggal Rapat</label>
+                            <input type="date" id="post-tanggal" required>
+                        </div>
                     </div>
                 </div>
+                
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Konten Keputusan</h4>
+                    <div class="input-group">
+                        <label>Judul / Topik (Deskripsi Singkat)</label>
+                        <textarea id="post-desc" rows="2" placeholder="Masukkan ringkasan singkat..."></textarea>
+                    </div>
+                    
+                    <div class="input-group mt-6">
+                        <label class="flex justify-between items-center mb-3">
+                            <span>Isi Keputusan Lengkap (Blocks)</span>
+                            <div class="flex gap-2">
+                                <button type="button" class="btn-secondary !text-[10px] !py-1" id="add-paragraph-btn"><i class="fa-solid fa-align-left"></i> Paragraf</button>
+                                <button type="button" class="btn-secondary !text-[10px] !py-1" id="add-table-btn"><i class="fa-solid fa-table"></i> Tabel</button>
+                            </div>
+                        </label>
+                        <div id="content-blocks-container" class="space-y-4 min-h-[100px] border border-dashed border-gray-300 rounded-md p-4 bg-gray-50 flex flex-col">
+                            <p class="text-xs text-gray-400 text-center my-auto" id="empty-blocks-text">Belum ada blok konten.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Lampiran File</h4>
+                    <div class="input-group !mb-0">
+                        <label>Link Dokumen (G-Drive / OneDrive / External)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-link absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="url" id="post-link" class="pl-9" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+                
+            </form>
+            <div class="modal-actions px-8 py-4 bg-white border-t border-gray-100 !mt-0 justify-between items-center">
+                <p class="text-xs text-gray-500"><i class="fa-solid fa-circle-info mr-1"></i> Status default adalah Aktif</p>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-secondary" id="close-modal-btn">Batal</button>
+                    <button type="submit" form="add-form" class="btn-primary shadow-md">Simpan Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- MODAL: ADD CATEGORY -->
+    <div id="add-cat-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 border-b pb-4">Tambah Kategori Baru</h3>
+            <form id="add-cat-form">
                 <div class="input-group">
-                    <label>Deskripsi Singkat (Tampil di Overview)</label>
-                    <textarea id="post-desc" rows="2"></textarea>
+                    <label>Nama Kategori</label>
+                    <input type="text" id="cat-name-input" required placeholder="Contoh: Likuiditas">
                 </div>
-                <div class="input-group">
-                    <label>Isi Keputusan (Bisa tambah paragraf atau tabel)</label>
-                    <div id="content-blocks-container">
-                        <!-- Blocks added here -->
-                    </div>
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button type="button" class="btn-secondary" id="add-paragraph-btn"><i
-                                class="fa-solid fa-align-left"></i> Paragraf</button>
-                        <button type="button" class="btn-secondary" id="add-table-btn"><i class="fa-solid fa-table"></i>
-                            Tabel</button>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Hyperlink (Link Eksternal jika ada)</label>
-                    <input type="url" id="post-link" placeholder="https://contoh.com">
-                </div>
-                <div class="modal-actions" style="margin-top: 20px;">
-                    <button type="button" class="btn-secondary" id="close-modal-btn"><i class="fa-solid fa-xmark"></i>
-                        Batal</button>
-                    <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                <div class="modal-actions border-t pt-4 mt-6">
+                    <button type="button" class="btn-secondary" id="close-cat-modal-btn">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Form for Users -->
+    <!-- MODALS for USER & PROFILE -->
     <div id="user-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <h3 id="user-modal-title">Tambah Viewer</h3>
+        <div class="modal-content">
+            <h3 id="user-modal-title" class="text-lg font-bold text-gray-900 mb-6 border-b pb-4">Tambah Viewer</h3>
             <form id="user-form">
                 <input type="hidden" id="user-id">
                 <div class="input-group">
-                    <label>Username</label>
-                    <input type="text" id="user-username" required>
+                    <label>Username</label><input type="text" id="user-username" required>
                 </div>
                 <div class="input-group">
-                    <label>Email</label>
-                    <input type="email" id="user-email" required>
+                    <label>Email</label><input type="email" id="user-email" required>
                 </div>
                 <div class="input-group" id="user-password-group">
-                    <label>Password</label>
-                    <input type="password" id="user-password" required>
+                    <label>Password</label><input type="password" id="user-password" required>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="close-user-modal-btn"><i
-                            class="fa-solid fa-xmark"></i> Batal</button>
-                    <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Simpan</button>
+                <div class="modal-actions border-t pt-4 mt-6">
+                    <button type="button" class="btn-secondary" id="close-user-modal-btn">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Form for Reset Password -->
     <div id="reset-password-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <h3><i class="fa-solid fa-key"></i> Reset Password Viewer</h3>
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 border-b pb-4"><i class="fa-solid fa-key"></i> Reset Password</h3>
             <form id="reset-password-form">
                 <input type="hidden" id="reset-user-id">
                 <div class="input-group">
-                    <label>Password Baru</label>
-                    <input type="password" id="reset-new-password" required minlength="6">
+                    <label>Password Baru</label><input type="password" id="reset-new-password" required minlength="6">
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="close-reset-modal-btn"><i
-                            class="fa-solid fa-xmark"></i> Batal</button>
-                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Reset</button>
+                <div class="modal-actions border-t pt-4 mt-6">
+                    <button type="button" class="btn-secondary" id="close-reset-modal-btn">Batal</button>
+                    <button type="submit" class="btn-primary">Reset</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Form for Change Profile Password -->
     <div id="profile-pwd-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <h3><i class="fa-solid fa-lock"></i> Ganti Password Akun</h3>
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 border-b pb-4"><i class="fa-solid fa-lock"></i> Ganti Password Akun</h3>
             <form id="profile-pwd-form">
                 <div class="input-group">
-                    <label>Password Saat Ini</label>
-                    <input type="password" id="profile-current-pwd" required>
+                    <label>Password Saat Ini</label><input type="password" id="profile-current-pwd" required>
                 </div>
                 <div class="input-group">
-                    <label>Password Baru</label>
-                    <input type="password" id="profile-new-pwd" required minlength="6">
+                    <label>Password Baru</label><input type="password" id="profile-new-pwd" required minlength="6">
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" id="close-profile-pwd-btn"><i
-                            class="fa-solid fa-xmark"></i> Batal</button>
-                    <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan</button>
+                <div class="modal-actions border-t pt-4 mt-6">
+                    <button type="button" class="btn-secondary" id="close-profile-pwd-btn">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan</button>
                 </div>
             </form>
         </div>
@@ -325,5 +581,4 @@
 
     <script src="app.js"></script>
 </body>
-
 </html>

@@ -109,6 +109,12 @@ app.get('/api/posts/search', authenticateToken, async (req, res) => {
             countParams.push(category);
             queryStr += ` AND p.kategori = $${countParams.length}`;
         }
+        
+        const status = req.query.status || '';
+        if (status) {
+            countParams.push(status);
+            queryStr += ` AND p.status = $${countParams.length}`;
+        }
 
         const countQuery = await pool.query(
             `SELECT COUNT(*) FROM posts p ${queryStr}`,
@@ -201,11 +207,25 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/categories', authenticateToken, async (req, res) => {
     try {
-        const categories = await pool.query('SELECT DISTINCT kategori FROM posts WHERE kategori IS NOT NULL ORDER BY kategori ASC');
+        const categories = await pool.query('SELECT name as kategori FROM categories ORDER BY name ASC');
         res.json({ data: categories.rows.map(row => row.kategori) });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Gagal mengambil kategori' });
+    }
+});
+
+app.post('/api/categories', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Nama kategori wajib diisi.' });
+        const newCat = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING *', [name]);
+        res.status(201).json({ message: 'Kategori berhasil ditambahkan!', data: newCat.rows[0] });
+    } catch (err) {
+        if (err.code === '23505') return res.status(400).json({ error: 'Kategori sudah ada.' });
+        console.error(err.message);
+        res.status(500).json({ error: 'Gagal menambahkan kategori' });
     }
 });
 
