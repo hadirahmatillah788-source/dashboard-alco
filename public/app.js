@@ -633,7 +633,7 @@ function openDetailView(post) {
                     block.content.headers.forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
-                        th.className = "px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gray-50 border border-gray-300";
+                        th.className = "px-5 py-4 text-center text-xs font-bold text-gray-900 uppercase tracking-wider bg-gray-50 border border-gray-300";
                         trHead.appendChild(th);
                     });
                 }
