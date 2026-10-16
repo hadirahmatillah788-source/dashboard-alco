@@ -14,22 +14,31 @@ app.use(cors());
 app.use(express.json());
 
 // Menyajikan file statis dari folder public dengan path absolut (Penting untuk Vercel)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// Fallback untuk route root '/' agar selalu mengirim index.html
+// Fallback untuk route root '/' agar selalu mengirim portal.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'portal.html'));
 });
 
 // 1. Setup Koneksi ke Database PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
+const poolAlco = new Pool({ connectionString: process.env.DATABASE_URL || 'postgres://postgres:admin123@db:5432/web_app_db' });
+const poolTreasury = new Pool({ connectionString: (process.env.DATABASE_URL || 'postgres://postgres:admin123@db:5432/web_app_db').replace('web_app_db', 'treasury_db') });
+const poolIdle = new Pool({ connectionString: (process.env.DATABASE_URL || 'postgres://postgres:admin123@db:5432/web_app_db').replace('web_app_db', 'dana_idle_db') });
+
+const getPool = (dbName) => {
+    if (dbName === 'treasury') return poolTreasury;
+    if (dbName === 'idle') return poolIdle;
+    return poolAlco;
+};
+
+// Default pool (Alco) untuk routes yang tidak spesifik
+const pool = poolAlco;
 
 // Tes apakah berhasil terhubung ke database
-pool.connect()
-    .then(() => console.log('✅ Berhasil terhubung ke database PostgreSQL!'))
-    .catch((err) => console.error('❌ Gagal terhubung ke database:', err.message));
+poolAlco.connect().then(() => console.log('✅ Berhasil terhubung ke ALCO DB!')).catch((err) => console.error('❌ Gagal terhubung ke ALCO DB:', err.message));
+poolTreasury.connect().then(() => console.log('✅ Berhasil terhubung ke Treasury DB!')).catch((err) => console.error('❌ Gagal terhubung ke Treasury DB:', err.message));
+poolIdle.connect().then(() => console.log('✅ Berhasil terhubung ke Idle DB!')).catch((err) => console.error('❌ Gagal terhubung ke Idle DB:', err.message));
 
 // ==========================================
 // MIDDLEWARE: VERIFIKASI JWT (Pos Satpam)
@@ -239,6 +248,20 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
     }
 });
 
+app.delete('/api/categories/:name', authenticateToken, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
+        const name = req.params.name;
+        const result = await pool.query('DELETE FROM categories WHERE name = $1 RETURNING *', [name]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Kategori tidak ditemukan.' });
+        }
+        res.json({ message: 'Kategori berhasil dihapus!' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Gagal menghapus kategori' });
+    }
+});
 
 
 // ==========================================
@@ -247,7 +270,8 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
 app.post('/api/register', async (req, res) => {
     try {
         // 1. Ambil data yang dikirimkan oleh pengguna
-        const { username, email, password } = req.body;
+        const { username, email, password, db } = req.body;
+        const targetPool = getPool(db);
 
         // Validasi dasar: Pastikan semua kolom diisi
         if (!username || !email || !password) {
@@ -261,7 +285,7 @@ app.post('/api/register', async (req, res) => {
         // 3. Simpan ke database
         // Kita menggunakan RETURNING agar database mengembalikan data user yang baru dibuat,
         // KECUALI password-nya (demi keamanan)
-        const newUser = await pool.query(
+        const newUser = await targetPool.query(
             'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, role, created_at',
             [username, email, hashedPassword]
         );
@@ -291,7 +315,8 @@ app.post('/api/register', async (req, res) => {
 // ==========================================
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, db } = req.body;
+        const targetPool = getPool(db);
 
         // 1. Validasi input dasar
         if (!email || !password) {
@@ -299,7 +324,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // 2. Cari pengguna berdasarkan email di database
-        const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const userResult = await targetPool.query('SELECT * FROM users WHERE email = $1', [email]);
 
         if (userResult.rows.length === 0) {
             // Gunakan pesan error umum demi keamanan (jangan beritahu "email tidak ditemukan")
@@ -349,8 +374,9 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/users', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
+        const targetPool = getPool(req.query.db);
         
-        const users = await pool.query("SELECT id, username, email, role, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC");
+        const users = await targetPool.query("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC");
         res.json({ data: users.rows });
     } catch (err) {
         console.error(err.message);
@@ -364,11 +390,12 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
         
         const { id } = req.params;
-        const { username, email } = req.body;
+        const { username, email, db } = req.body;
+        const targetPool = getPool(db);
         
         // Kita juga bisa tambahkan fitur update password di sini jika diinginkan
-        const updatedUser = await pool.query(
-            "UPDATE users SET username = $1, email = $2 WHERE id = $3 AND role = 'user' RETURNING id, username, email",
+        const updatedUser = await targetPool.query(
+            "UPDATE users SET username = $1, email = $2 WHERE id = $3 RETURNING id, username, email",
             [username, email, id]
         );
         
@@ -387,15 +414,16 @@ app.put('/api/users/:id/reset-password', authenticateToken, async (req, res) => 
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
         const { id } = req.params;
-        const { newPassword } = req.body;
+        const { newPassword, db } = req.body;
+        const targetPool = getPool(db);
 
         if (!newPassword || newPassword.length < 6) {
              return res.status(400).json({ error: 'Password baru harus minimal 6 karakter.' });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        const updatedUser = await pool.query(
-            "UPDATE users SET password_hash = $1 WHERE id = $2 AND role = 'user' RETURNING id",
+        const updatedUser = await targetPool.query(
+            "UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id",
             [hashedPassword, id]
         );
 
@@ -412,10 +440,11 @@ app.put('/api/profile/password', authenticateToken, async (req, res) => {
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin yang dapat mengubah password.' });
         
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword, newPassword, db } = req.body;
         const user_id = req.user.id;
+        const targetPool = getPool(db);
 
-        const userResult = await pool.query('SELECT password_hash FROM users WHERE id = $1', [user_id]);
+        const userResult = await targetPool.query('SELECT password_hash FROM users WHERE id = $1', [user_id]);
         if (userResult.rows.length === 0) return res.status(404).json({ error: 'User tidak ditemukan.' });
 
         const isValidPassword = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
@@ -424,7 +453,7 @@ app.put('/api/profile/password', authenticateToken, async (req, res) => {
         if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password baru minimal 6 karakter.' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, user_id]);
+        await targetPool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, user_id]);
 
         res.json({ message: 'Password berhasil diubah!' });
     } catch (err) {
@@ -439,8 +468,11 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditolak.' });
         
         const { id } = req.params;
-        const deletedUser = await pool.query(
-            "DELETE FROM users WHERE id = $1 AND role = 'user' RETURNING id",
+        const { db } = req.query; // Because DELETE request might pass db in query
+        const targetPool = getPool(db);
+        
+        const deletedUser = await targetPool.query(
+            "DELETE FROM users WHERE id = $1 RETURNING id",
             [id]
         );
         

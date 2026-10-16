@@ -222,7 +222,7 @@ navAll.addEventListener('click', (e) => { e.preventDefault(); switchView('all');
 navActive.addEventListener('click', (e) => { e.preventDefault(); switchView('active'); });
 navInactive.addEventListener('click', (e) => { e.preventDefault(); switchView('inactive'); });
 navCategories.addEventListener('click', (e) => { e.preventDefault(); switchView('categories'); });
-navUsers.addEventListener('click', (e) => { e.preventDefault(); switchView('users'); });
+navUsers?.addEventListener('click', (e) => { e.preventDefault(); switchView('users'); });
 
 document.getElementById('view-all-btn').addEventListener('click', () => switchView('all'));
 
@@ -334,7 +334,7 @@ logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('user');
     currentToken = null;
     currentUser = null;
-    showLogin();
+    window.location.href = 'portal.html';
 });
 
 // Categories Management
@@ -382,8 +382,9 @@ function renderCategoriesView() {
             <td class="font-medium text-gray-900"><i class="fa-solid fa-tag text-gray-400 mr-2 text-xs"></i> ${cat.kategori}</td>
             <td class="text-center"><span class="badge bg-green-50 text-green-700 border-green-200">${cat.active_count}</span></td>
             <td class="text-center"><span class="badge bg-gray-100 text-gray-600 border-gray-200">${cat.inactive_count}</span></td>
-            <td class="text-right">
+            <td class="text-right flex items-center justify-end gap-2">
                 <button class="btn-secondary filter-cat-btn !text-xs !py-1.5" data-cat="${cat.kategori}"><i class="fa-solid fa-filter"></i> Lihat Keputusan</button>
+                ${currentUser.role === 'admin' ? `<button class="btn-secondary del-cat-btn !text-xs !py-1.5 !text-red-600 hover:!bg-red-50" data-cat="${cat.kategori}"><i class="fa-solid fa-trash"></i> Hapus</button>` : ''}
             </td>
         `;
         tr.querySelector('.filter-cat-btn').addEventListener('click', (e) => {
@@ -391,6 +392,30 @@ function renderCategoriesView() {
             categoryFilter.value = currentCategoryFilter;
             switchView('all');
         });
+
+        const delBtn = tr.querySelector('.del-cat-btn');
+        if (delBtn) {
+            delBtn.addEventListener('click', async (e) => {
+                const catName = e.currentTarget.dataset.cat;
+                if (!confirm(`Anda yakin ingin menghapus kategori "${catName}"?`)) return;
+                
+                try {
+                    const res = await fetch(`${API_URL}/categories/${encodeURIComponent(catName)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        fetchCategories();
+                    } else {
+                        alert(data.error || 'Gagal menghapus kategori');
+                    }
+                } catch (err) {
+                    alert('Terjadi kesalahan koneksi');
+                }
+            });
+        }
+        
         categoriesTableBody.appendChild(tr);
     });
     
@@ -883,15 +908,15 @@ function setupUserActionButtons() {
     });
 }
 
-addUserBtn.addEventListener('click', () => {
+addUserBtn?.addEventListener('click', () => {
     userModalTitle.innerHTML = 'Tambah Viewer'; userIdInput.value = '';
     document.getElementById('user-password').setAttribute('required', 'true');
     userPasswordGroup.style.display = 'block'; userForm.reset(); userModal.classList.remove('hidden');
 });
-closeUserModalBtn.addEventListener('click', () => { userModal.classList.add('hidden'); });
-closeResetModalBtn.addEventListener('click', () => { resetPasswordModal.classList.add('hidden'); });
+closeUserModalBtn?.addEventListener('click', () => { userModal.classList.add('hidden'); });
+closeResetModalBtn?.addEventListener('click', () => { resetPasswordModal.classList.add('hidden'); });
 
-userForm.addEventListener('submit', async (e) => {
+userForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = userIdInput.value; const isEdit = id !== '';
     const url = isEdit ? `${API_URL}/users/${id}` : `${API_URL}/register`;
@@ -902,7 +927,7 @@ userForm.addEventListener('submit', async (e) => {
     } catch (err) { alert('Gagal menyimpan'); }
 });
 
-resetPasswordForm.addEventListener('submit', async (e) => {
+resetPasswordForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
         const res = await fetch(`${API_URL}/users/${resetUserIdInput.value}/reset-password`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` }, body: JSON.stringify({ newPassword: resetNewPasswordInput.value }) });

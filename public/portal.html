@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Dashboard - Bank Kalsel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00529b;
+            --primary-light: #2a7cbd;
+            --accent: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #102a42;
+            --text-muted: #486581;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Abstract Background Shapes for Modern Look */
+        .shape {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(42, 124, 189, 0.4);
+            top: -100px;
+            left: -100px;
+        }
+
+        .shape-2 {
+            width: 500px;
+            height: 500px;
+            background: rgba(245, 158, 11, 0.3);
+            bottom: -150px;
+            right: -100px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+            padding: 0 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1100px;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+
+        .portal-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 2.5rem 2rem;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .portal-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .portal-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .portal-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(0, 82, 155, 0.15);
+            border-color: rgba(255, 255, 255, 0.8);
+            background: #ffffff;
+        }
+
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 82, 155, 0.25);
+            transition: transform 0.3s ease;
+        }
+
+        .portal-card:hover .icon-wrapper {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .icon-wrapper svg {
+            width: 40px;
+            height: 40px;
+            color: white;
+        }
+
+        .portal-card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .portal-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .enter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(0, 82, 155, 0.05);
+            color: var(--primary);
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .portal-card:hover .enter-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .enter-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .portal-card:hover .enter-btn svg {
+            transform: translateX(4px);
+        }
+
+        /* Base Styles for Custom Buttons */
+        .enter-btn.treasury {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .enter-btn.dana-idle {
+            color: #6d28d9;
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Hover Styles for Custom Buttons */
+        .portal-card:hover .enter-btn.treasury {
+            background: #059669;
+            color: white;
+        }
+
+        .portal-card:hover .enter-btn.dana-idle {
+            background: #6d28d9;
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .portal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <div class="header">
+        <h1>PORTAL TREASURY BANK KALSEL</h1>
+        <p>Silakan pilih dashboard yang ingin Anda akses hari ini.</p>
+    </div>
+
+    <div class="portal-grid">
+        <!-- Card 1: Dashboard ALCO -->
+        <a href="index.html" class="portal-card">
+            <div class="icon-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </div>
+            <h2>Dashboard ALCO</h2>
+            <p>Sistem manajemen data ALCO, laporan, persetujuan, dan pencarian dokumen.</p>
+            <div class="enter-btn">
+                Akses Dashboard
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </div>
+        </a>
+
+        <!-- Card 2: Laporan TREASURY -->
+        <a href="https://treasury-likuiditas.ai.studio/" class="portal-card">
+            <div class="icon-wrapper" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2>Laporan TREASURY<br>BANK KALSEL</h2>
+            <p>Dashboard utama untuk memantau aktivitas dan laporan Treasury Bank Kalsel.</p>
+            <div class="enter-btn treasury">
+                Akses Dashboard
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </div>
+        </a>
+
+        <!-- Card 3: Laporan DANA IDLE -->
+        <a href="idle_dashboard.html" class="portal-card">
+            <div class="icon-wrapper" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+            </div>
+            <h2>Laporan DANA IDLE<br>TREASURY BANK KALSEL</h2>
+            <p>Pemantauan spesifik untuk dana idle (menganggur) pada divisi Treasury.</p>
+            <div class="enter-btn dana-idle">
+                Akses Dashboard
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </div>
+        </a>
+    </div>
+
+    <!-- Admin Link for User Management -->
+    <div style="margin-top: 3rem; text-align: center; z-index: 10;">
+        <a href="users.html"
+            style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; border-bottom: 1px dashed var(--text-muted); padding-bottom: 2px;">Masuk
+            ke Halaman Pengelolaan User (Admin)</a>
+    </div>
+
+</body>
+
+</html>

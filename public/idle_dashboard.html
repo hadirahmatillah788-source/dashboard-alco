@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Dana Idle - Bank Kalsel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f3f4f6; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { background: #6d28d9; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.25rem; }
+        .btn { background: white; color: #6d28d9; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: white; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .login-box h2 { margin-top: 0; margin-bottom: 1.5rem; text-align: center; color: #111827; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #374151; font-size: 0.875rem; }
+        .form-group input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
+        .btn-primary { width: 100%; background: #6d28d9; color: white; border: none; padding: 0.75rem; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 1rem; }
+        
+        #dashboard-content { display: none; flex: 1; padding: 2rem; text-align: center; }
+        .empty-state { background: white; padding: 4rem 2rem; border-radius: 8px; border: 2px dashed #d1d5db; color: #6b7280; }
+        .empty-state svg { width: 64px; height: 64px; margin-bottom: 1rem; color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>Login Dana Idle</h2>
+            <div id="login-error" style="color: red; font-size: 0.875rem; text-align: center; margin-bottom: 1rem; display: none;"></div>
+            <form onsubmit="event.preventDefault(); login();">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary">Masuk</button>
+            </form>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="portal.html" style="font-size: 0.875rem; color: #6b7280; text-decoration: none;">Kembali ke Portal</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" style="display: none; flex-direction: column; min-height: 100vh;">
+        <div class="header">
+            <h1>Laporan DANA IDLE</h1>
+            <div>
+                <span id="user-name" style="margin-right: 1rem; font-size: 0.875rem;"></span>
+                <button class="btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        
+        <div id="dashboard-content">
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3>Dashboard Sedang Dalam Pengembangan</h3>
+                <p>Halaman ini saat ini hanya simulasi (dummy). Link yang sebenarnya akan segera ditambahkan.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        
+        function checkLogin() {
+            const token = localStorage.getItem('idle_token');
+            const user = JSON.parse(localStorage.getItem('idle_user') || '{}');
+            
+            if (token) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('dashboard-content').style.display = 'block';
+                document.getElementById('user-name').textContent = `Halo, ${user.username || 'User'}`;
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, db: 'idle' })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem('idle_token', data.token);
+                    localStorage.setItem('idle_user', JSON.stringify(data.user));
+                    checkLogin();
+                } else {
+                    const err = document.getElementById('login-error');
+                    err.textContent = data.error || 'Login gagal';
+                    err.style.display = 'block';
+                }
+            } catch (e) {
+                const err = document.getElementById('login-error');
+                err.textContent = 'Gagal menghubungi server';
+                err.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('idle_token');
+            localStorage.removeItem('idle_user');
+            window.location.href = 'portal.html';
+        }
+
+        checkLogin();
+    </script>
+</body>
+</html>
