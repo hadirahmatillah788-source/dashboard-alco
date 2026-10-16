@@ -311,16 +311,98 @@ app.post('/api/register', async (req, res) => {
 
 
 // ==========================================
+// 4.5 HELPER & ROUTE: GENERATE CAPTCHA (Anti-Bot)
+// ==========================================
+function generateCaptcha() {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let text = '';
+    for (let i = 0; i < 5; i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const width = 160;
+    const height = 50;
+
+    // Garis gangguan (noise lines)
+    let lines = '';
+    for (let i = 0; i < 5; i++) {
+        const x1 = Math.floor(Math.random() * width);
+        const y1 = Math.floor(Math.random() * height);
+        const x2 = Math.floor(Math.random() * width);
+        const y2 = Math.floor(Math.random() * height);
+        const r = Math.floor(Math.random() * 140);
+        const g = Math.floor(Math.random() * 140);
+        const b = Math.floor(Math.random() * 140);
+        lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(${r},${g},${b},0.35)" stroke-width="${(Math.random() * 1.5 + 1).toFixed(1)}" />`;
+    }
+
+    // Titik gangguan (noise dots)
+    let dots = '';
+    for (let i = 0; i < 35; i++) {
+        const cx = Math.floor(Math.random() * width);
+        const cy = Math.floor(Math.random() * height);
+        const r = (Math.random() * 1.5 + 0.5).toFixed(1);
+        dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(120,120,120,0.3)" />`;
+    }
+
+    // Karakter teks dengan rotasi dan posisi acak
+    let charsSvg = '';
+    const colors = ['#1e3a8a', '#047857', '#b91c1c', '#7c3aed', '#c2410c', '#0f766e', '#1d4ed8'];
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const rot = Math.floor(Math.random() * 26) - 13;
+        const x = 18 + i * 27 + Math.floor(Math.random() * 4 - 2);
+        const y = 35 + Math.floor(Math.random() * 6 - 3);
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const fontSize = Math.floor(Math.random() * 4) + 24;
+        charsSvg += `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-weight="bold" font-size="${fontSize}" fill="${color}" transform="rotate(${rot}, ${x}, ${y})">${char}</text>`;
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color: #f3f4f6; border-radius: 6px; user-select: none; display: block;">${dots}${lines}${charsSvg}</svg>`;
+
+    return { text, svg };
+}
+
+app.get('/api/captcha', (req, res) => {
+    try {
+        const { text, svg } = generateCaptcha();
+        const captchaToken = jwt.sign(
+            { code: text.toUpperCase() },
+            process.env.JWT_SECRET || 'Sorata123*',
+            { expiresIn: '5m' }
+        );
+        res.json({ token: captchaToken, svg: svg });
+    } catch (err) {
+        console.error('Error generating captcha:', err.message);
+        res.status(500).json({ error: 'Gagal membuat captcha' });
+    }
+});
+
+// ==========================================
 // 5. ROUTE: LOGIN PENGGUNA (Auth)
 // ==========================================
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password, db } = req.body;
+        const { email, password, db, captchaToken, captchaInput } = req.body;
         const targetPool = getPool(db);
 
         // 1. Validasi input dasar
         if (!email || !password) {
             return res.status(400).json({ error: 'Email dan password wajib diisi!' });
+        }
+
+        // 2. Validasi Captcha (Anti-Bot)
+        if (!captchaToken || !captchaInput) {
+            return res.status(400).json({ error: 'Kode captcha wajib diisi!' });
+        }
+
+        try {
+            const decoded = jwt.verify(captchaToken, process.env.JWT_SECRET || 'Sorata123*');
+            if (captchaInput.trim().toUpperCase() !== decoded.code) {
+                return res.status(400).json({ error: 'Kode captcha tidak cocok. Silakan coba lagi.' });
+            }
+        } catch (err) {
+            return res.status(400).json({ error: 'Kode captcha telah kedaluwarsa. Silakan muat ulang captcha.' });
         }
 
         // 2. Cari pengguna berdasarkan email di database

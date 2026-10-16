@@ -183,9 +183,34 @@ function init() {
     }
 }
 
+let currentCaptchaToken = '';
+
+async function loadCaptcha() {
+    const container = document.getElementById('captcha-svg-container');
+    const input = document.getElementById('captcha-input');
+    if (!container) return;
+    
+    container.innerHTML = '<span class="text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i></span>';
+    if (input) input.value = '';
+    
+    try {
+        const res = await fetch(`${API_URL}/captcha`);
+        if (res.ok) {
+            const data = await res.json();
+            currentCaptchaToken = data.token;
+            container.innerHTML = data.svg;
+        } else {
+            container.innerHTML = '<span class="text-xs text-red-500">Gagal memuat</span>';
+        }
+    } catch (e) {
+        container.innerHTML = '<span class="text-xs text-red-500">Error captcha</span>';
+    }
+}
+
 function showLogin() {
     loginContainer.classList.remove('hidden');
     dashboardContainer.classList.add('hidden');
+    loadCaptcha();
 }
 
 function showDashboard() {
@@ -289,10 +314,15 @@ function switchView(view) {
 }
 
 // Authentication
+document.getElementById('refresh-captcha-btn')?.addEventListener('click', () => {
+    loadCaptcha();
+});
+
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const captchaInput = document.getElementById('captcha-input').value;
     
     const btn = e.target.querySelector('button');
     const originalText = btn.innerHTML;
@@ -303,7 +333,12 @@ loginForm.addEventListener('submit', async (e) => {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({
+                email,
+                password,
+                captchaToken: currentCaptchaToken,
+                captchaInput: captchaInput
+            })
         });
         
         const data = await res.json();
@@ -319,10 +354,12 @@ loginForm.addEventListener('submit', async (e) => {
         } else {
             loginError.textContent = data.error || 'Login gagal';
             loginError.classList.remove('hidden');
+            loadCaptcha();
         }
     } catch (err) {
         loginError.textContent = 'Gagal menghubungi server';
         loginError.classList.remove('hidden');
+        loadCaptcha();
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;

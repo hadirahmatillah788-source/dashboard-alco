@@ -38,6 +38,21 @@
                     <label>Password</label>
                     <input type="password" id="password" required autocomplete="off">
                 </div>
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0;">Kode Captcha</label>
+                        <span style="font-size: 0.75rem; color: #6b7280;">Anti-Bot</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <div id="idle-captcha-container" style="border: 1px solid #d1d5db; border-radius: 4px; overflow: hidden; height: 50px; min-width: 160px; display: flex; align-items: center; justify-content: center; background: #f9fafb;">
+                            <span style="font-size: 0.75rem; color: #9ca3af;">Memuat...</span>
+                        </div>
+                        <button type="button" onclick="loadIdleCaptcha()" class="btn" style="padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; height: 50px; font-size: 1.1rem; cursor: pointer;" title="Muat ulang Captcha">
+                            ↻
+                        </button>
+                    </div>
+                    <input type="text" id="captcha-input" required autocomplete="off" placeholder="KETIK KODE DI ATAS" maxlength="6" style="text-transform: uppercase; letter-spacing: 2px; font-weight: bold; font-family: monospace; text-align: center;">
+                </div>
                 <button type="submit" class="btn-primary">Masuk</button>
             </form>
             <div style="text-align: center; margin-top: 1rem;">
@@ -69,6 +84,27 @@
     <script>
         const API_URL = '/api';
         
+        let idleCaptchaToken = '';
+        async function loadIdleCaptcha() {
+            const container = document.getElementById('idle-captcha-container');
+            const input = document.getElementById('captcha-input');
+            if (!container) return;
+            container.innerHTML = '<span style="font-size: 0.75rem; color: #9ca3af;">Memuat...</span>';
+            if (input) input.value = '';
+            try {
+                const res = await fetch(`${API_URL}/captcha`);
+                if (res.ok) {
+                    const data = await res.json();
+                    idleCaptchaToken = data.token;
+                    container.innerHTML = data.svg;
+                } else {
+                    container.innerHTML = '<span style="font-size: 0.75rem; color: red;">Gagal memuat</span>';
+                }
+            } catch (e) {
+                container.innerHTML = '<span style="font-size: 0.75rem; color: red;">Error captcha</span>';
+            }
+        }
+
         function checkLogin() {
             const token = localStorage.getItem('idle_token');
             const user = JSON.parse(localStorage.getItem('idle_user') || '{}');
@@ -81,18 +117,26 @@
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
+                loadIdleCaptcha();
             }
         }
 
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const captchaInput = document.getElementById('captcha-input').value;
             
             try {
                 const res = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, db: 'idle' })
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        db: 'idle',
+                        captchaToken: idleCaptchaToken,
+                        captchaInput: captchaInput
+                    })
                 });
                 
                 const data = await res.json();
@@ -105,11 +149,13 @@
                     const err = document.getElementById('login-error');
                     err.textContent = data.error || 'Login gagal';
                     err.style.display = 'block';
+                    loadIdleCaptcha();
                 }
             } catch (e) {
                 const err = document.getElementById('login-error');
                 err.textContent = 'Gagal menghubungi server';
                 err.style.display = 'block';
+                loadIdleCaptcha();
             }
         }
 

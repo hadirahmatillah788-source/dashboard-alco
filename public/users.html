@@ -70,6 +70,21 @@
                     <label>Password</label>
                     <input type="password" id="admin-password" required autocomplete="off">
                 </div>
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0;">Kode Keamanan (Captcha)</label>
+                        <span style="font-size: 0.75rem; color: #6b7280;">Anti-Bot</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <div id="users-captcha-container" style="border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; height: 50px; min-width: 160px; display: flex; align-items: center; justify-content: center; background: #f9fafb;">
+                            <span style="font-size: 0.75rem; color: #9ca3af;">Memuat...</span>
+                        </div>
+                        <button type="button" id="users-refresh-captcha-btn" onclick="loadUsersCaptcha()" class="btn btn-outline" style="padding: 0 1rem; height: 50px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Muat ulang Captcha">
+                            ↻
+                        </button>
+                    </div>
+                    <input type="text" id="users-captcha-input" required autocomplete="off" placeholder="KETIK KODE DI ATAS" maxlength="6" style="text-transform: uppercase; letter-spacing: 3px; font-weight: bold; font-family: monospace; text-align: center;">
+                </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Masuk</button>
             </form>
             <div style="text-align: center; margin-top: 1rem;">
@@ -160,6 +175,29 @@
     <script>
         const API_URL = '/api';
         
+        let usersCaptchaToken = '';
+
+        async function loadUsersCaptcha() {
+            const container = document.getElementById('users-captcha-container');
+            const input = document.getElementById('users-captcha-input');
+            if (!container) return;
+            container.innerHTML = '<span style="font-size: 0.75rem; color: #9ca3af;">Memuat...</span>';
+            if (input) input.value = '';
+            
+            try {
+                const res = await fetch(`${API_URL}/captcha`);
+                if (res.ok) {
+                    const data = await res.json();
+                    usersCaptchaToken = data.token;
+                    container.innerHTML = data.svg;
+                } else {
+                    container.innerHTML = '<span style="font-size: 0.75rem; color: red;">Gagal memuat</span>';
+                }
+            } catch (e) {
+                container.innerHTML = '<span style="font-size: 0.75rem; color: red;">Error captcha</span>';
+            }
+        }
+        
         function checkLogin() {
             const token = localStorage.getItem('admin_token');
             const user = JSON.parse(localStorage.getItem('admin_user') || '{}');
@@ -171,19 +209,27 @@
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
+                loadUsersCaptcha();
             }
         }
 
         async function loginAdmin() {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
+            const captchaInput = document.getElementById('users-captcha-input').value;
             
             try {
                 // Login via ALCO DB as the central admin source
                 const res = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, db: 'alco' })
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        db: 'alco',
+                        captchaToken: usersCaptchaToken,
+                        captchaInput: captchaInput
+                    })
                 });
                 
                 const data = await res.json();
@@ -196,15 +242,18 @@
                     const err = document.getElementById('login-error');
                     err.textContent = 'Hanya admin yang dapat mengakses halaman ini.';
                     err.style.display = 'block';
+                    loadUsersCaptcha();
                 } else {
                     const err = document.getElementById('login-error');
                     err.textContent = data.error || 'Login gagal';
                     err.style.display = 'block';
+                    loadUsersCaptcha();
                 }
             } catch (e) {
                 const err = document.getElementById('login-error');
                 err.textContent = 'Gagal menghubungi server';
                 err.style.display = 'block';
+                loadUsersCaptcha();
             }
         }
 
